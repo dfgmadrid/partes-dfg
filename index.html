@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f2a2e">
+<title>Parte Maquinaria DFG</title>
+<style>
+/* Layout: una columna móvil, secciones como hojas del talonario, barra de acción fija abajo */
+:root{
+  --bg:#eef0ee; --paper:#fbfcfa; --ink:#1d2427; --muted:#5d6a6e; --line:#cfd6d3;
+  --accent:#b8860b; --accent-ink:#1d2427; --head:#1f2a2e; --head-ink:#f3f1ea;
+  --ok:#2e7d4f; --warn:#b26a00; --bad:#b3261e; --field:#ffffff;
+  --f-ui: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-num: ui-monospace, "SF Mono", "Roboto Mono", Consolas, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151a1c; --paper:#1d2427; --ink:#e7ebe9; --muted:#9aa7a9; --line:#34403f;
+  --accent:#d9a62e; --accent-ink:#151a1c; --head:#0f1416; --head-ink:#f3f1ea;
+  --ok:#5fbf86; --warn:#e3a13b; --bad:#ef6b62; --field:#151a1c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151a1c; --paper:#1d2427; --ink:#e7ebe9; --muted:#9aa7a9; --line:#34403f;
+  --accent:#d9a62e; --accent-ink:#151a1c; --head:#0f1416; --head-ink:#f3f1ea;
+  --ok:#5fbf86; --warn:#e3a13b; --bad:#ef6b62; --field:#151a1c; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--f-ui);padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+[hidden]{display:none!important}
+header.top{position:sticky;top:0;z-index:5;background:var(--head);color:var(--head-ink);
+  padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;display:flex;align-items:center;gap:12px}
+.logo{font-weight:800;font-size:22px;letter-spacing:.04em;line-height:1}
+.logo small{display:block;font-size:8px;letter-spacing:.3em;font-weight:600;opacity:.75}
+.top h1{font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin:0;flex:1;font-weight:600}
+.top .np{font-family:var(--f-num);color:var(--accent);font-size:13px;text-align:right}
+nav.tabs{display:flex;gap:6px;padding:10px 16px 0;max-width:720px;margin:0 auto}
+nav.tabs button{flex:1;border:1px solid var(--line);background:var(--paper);color:var(--muted);
+  padding:9px 6px;border-radius:8px;font:600 13px var(--f-ui)}
+nav.tabs button[aria-selected="true"]{background:var(--head);color:var(--head-ink);border-color:var(--head)}
+main{max-width:720px;margin:0 auto;padding:12px 16px;display:grid;gap:14px}
+section.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+section.sheet>h2{margin:0;padding:8px 12px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.body{padding:12px;display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
+label.f{display:grid;gap:4px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:0}
+input,select,textarea{width:100%;font:16px var(--f-ui);color:var(--ink);background:var(--field);
+  border:1px solid var(--line);border-radius:6px;padding:9px 10px;min-width:0}
+input[inputmode="decimal"],input[type="number"],.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+textarea{min-height:90px;resize:vertical}
+.calc{display:flex;gap:10px;flex-wrap:wrap;font-family:var(--f-num);font-size:13px}
+.chip{padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg)}
+.chip.ok{border-color:var(--ok);color:var(--ok)} .chip.warn{border-color:var(--warn);color:var(--warn)} .chip.bad{border-color:var(--bad);color:var(--bad)}
+.card{border:1px solid var(--line);border-radius:6px;padding:10px;display:grid;gap:10px;background:var(--bg)}
+.card .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;font-size:13px}
+button{cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:10px 14px;border-radius:8px;font:600 14px var(--f-ui)}
+.btn.small{padding:6px 10px;font-size:12px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.dark{background:var(--head);border-color:var(--head);color:var(--head-ink)}
+.btn.danger{color:var(--bad);border-color:var(--bad);background:transparent}
+.x{border:none;background:transparent;color:var(--bad);font-size:20px;line-height:1;padding:2px 6px}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.check{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:9px 10px;background:var(--field)}
+.check input{width:20px;height:20px;margin:0;accent-color:var(--accent)}
+table.par{width:100%;border-collapse:collapse;font-size:14px}
+table.par td{padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.par td:first-child{font-weight:600;font-size:13px}
+table.par input{padding:7px 8px}
+.sig{border:1px dashed var(--muted);border-radius:6px;background:#fff;touch-action:none;width:100%;height:150px;display:block}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--paper);border-top:1px solid var(--line);
+  padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;justify-content:center}
+.bar .btn{flex:1;max-width:340px}
+.note{font-size:13px;color:var(--muted)}
+.msgs{display:grid;gap:6px}
+.msg{font-size:13px;padding:8px 10px;border-radius:6px;border-left:4px solid}
+.msg.bad{border-color:var(--bad);background:var(--bg)}
+.msg.warn{border-color:var(--warn);background:var(--bg)}
+.hist{display:grid;gap:8px}
+.hrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--paper)}
+.hrow .t{min-width:0} .hrow .t b{font-family:var(--f-num)} .hrow .t div{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow .a{display:flex;gap:6px;flex-shrink:0}
+.modal{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px}
+.modal .box{background:var(--paper);color:var(--ink);border-radius:10px;padding:18px;max-width:420px;width:100%;display:grid;gap:12px}
+.modal h3{margin:0;font-size:17px}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:11;
+  background:var(--head);color:var(--head-ink);padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw}
+.locked input,.locked select,.locked textarea{pointer-events:none;opacity:.75}
+@media (prefers-reduced-motion:no-preference){.toast{transition:opacity .2s}}
+</style>
+</head>
+<body>
+<div id="nojs" style="background:#b3261e;color:#fff;padding:14px 16px;font:15px/1.4 sans-serif">
+  <b>La app no se está ejecutando.</b> Este visor solo muestra la página, sin las listas de máquinas ni los botones. Ábrela en Safari o Chrome (en iPhone: botón Compartir → Abrir en Safari, o abre el enlace web de la app).</div>
+<script>window.onerror=function(m,s,l){var b=document.getElementById("nojs");if(b){b.style.display="block";b.innerHTML="<b>Error de la app:</b> "+String(m).replace(/</g,"&lt;")+" (línea "+l+"). Envía una captura de este aviso a la oficina."}};</script>
+<header class="top">
+  <div class="logo">DFG<small>NATURAL STONE</small></div>
+  <h1>Parte Maquinaria</h1>
+  <div class="np" id="hdrNum">—</div>
+</header>
+<nav class="tabs" role="tablist">
+  <button id="tab-parte" role="tab" aria-selected="true">Parte</button>
+  <button id="tab-hist" role="tab" aria-selected="false">Historial</button>
+  <button id="tab-reg" role="tab" aria-selected="false">Registros</button>
+  <button id="tab-ajustes" role="tab" aria-selected="false">Ajustes</button>
+</nav>
+
+<!-- ======== PARTE ======== -->
+<main id="v-parte">
+  <section class="sheet">
+    <h2>Identificación</h2>
+    <div class="body">
+      <div class="grid2">
+        <label class="f">Fecha<input type="date" id="fecha"></label>
+        <label class="f">Código máquina<select id="maquina"></select></label>
+      </div>
+      <label class="f">Operario<input id="operario" autocomplete="name" placeholder="Nombre y apellidos"></label>
+      <div class="grid2">
+        <label class="f">Horas iniciales (horómetro)<input id="hIni" inputmode="decimal"></label>
+        <label class="f">Horas finales (horómetro)<input id="hFin" inputmode="decimal"></label>
+      </div>
+      <div class="calc" id="calc"></div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Tipo de trabajo <button class="btn small" id="addTrab">+ Añadir</button></h2>
+    <div class="body" id="trabajos"></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Consumos maquinaria</h2>
+    <div class="body">
+      <div class="grid2">
+        <label class="f">Gasóleo A (L)<input id="gasA" inputmode="decimal"></label>
+        <label class="f">Gasóleo B (L)<input id="gasB" inputmode="decimal"></label>
+      </div>
+      <div class="note">Aceites maquinaria / martillos</div>
+      <div id="aceites" style="display:grid;gap:10px"></div>
+      <button class="btn small" id="addAceite" style="justify-self:start">+ Otro aceite</button>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Parada maquinaria (horas)</h2>
+    <div class="body" style="overflow-x:auto">
+      <table class="par" id="paradas"><tr><td></td><td class="note">Normal</td><td class="note">Extra</td></tr></table>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Mantenimiento maquinaria</h2>
+    <div class="body">
+      <div class="checks" id="mantChecks"></div>
+      <div id="filtros" style="display:grid;gap:10px"></div>
+      <button class="btn small" id="addFiltro" style="justify-self:start">+ Filtro / repuesto</button>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Reparación avería</h2>
+    <div class="body">
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="repInt"> Reparación interna</label>
+        <label class="check"><input type="checkbox" id="repExt"> Reparación externa</label>
+      </div>
+      <label class="f">Proveedor<input id="proveedor"></label>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <h2>Observaciones</h2>
+    <div class="body"><textarea id="obs"></textarea></div>
+  </section>
+
+  <section class="sheet">
+    <h2>Firma del operario <button class="btn small" id="sigClear">Borrar</button></h2>
+    <div class="body"><canvas class="sig" id="sig"></canvas></div>
+  </section>
+
+  <div class="msgs" id="msgs"></div>
+</main>
+
+<!-- ======== HISTORIAL ======== -->
+<main id="v-hist" hidden>
+  <p class="note">Partes cerrados en este teléfono. Se guardan los últimos 60.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="bkAll">Copia de todo el historial</button>
+  <label class="btn small" for="bkIn">Restaurar copia</label><input type="file" id="bkIn" accept=".txt,.json,text/plain,application/json" hidden></div>
+  <div class="hist" id="hist"></div>
+</main>
+
+<!-- ======== REGISTROS ======== -->
+<main id="v-reg" hidden>
+  <section class="sheet"><h2>Filtro</h2><div class="body">
+    <div class="grid3"><label class="f">Máquina<select id="rMaq"></select></label><label class="f">Desde<input type="date" id="rDesde"></label><label class="f">Hasta<input type="date" id="rHasta"></label></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" data-rper="mes">Este mes</button><button class="btn small" data-rper="mesant">Mes anterior</button><button class="btn small" data-rper="anio">Este año</button><button class="btn small" data-rper="todo">Todo</button></div>
+    <p class="note" style="margin:0">Partes cerrados en este teléfono. Para ver los de todas las máquinas y operarios, la oficina usa su app de control.</p>
+  </div></section>
+  <div id="regOut"></div>
+</main>
+
+<!-- ======== AJUSTES ======== -->
+<main id="v-ajustes" hidden>
+  <section class="sheet"><h2>Configuración de la empresa</h2><div class="body">
+    <p class="note">Si la oficina te pasa un archivo de configuración, cárgalo aquí y se pondrán las máquinas y canteras.</p>
+    <label class="btn small" for="cfgIn" style="justify-self:start">Cargar configuración</label><input type="file" id="cfgIn" accept=".txt,.json,text/plain,application/json" hidden></div></section>
+  <section class="sheet"><h2>Máquinas</h2><div class="body">
+    <label class="f">Códigos de máquina<textarea id="cfgMaq" readonly></textarea></label><p class="note">La lista la gestiona la oficina. Para cambiarla, carga un archivo de configuración nuevo.</p></div></section>
+  <section class="sheet"><h2>Canteras / centros de trabajo</h2><div class="body">
+    <label class="f">Uno por línea<textarea id="cfgCant"></textarea></label></div></section>
+  <section class="sheet"><h2>Envío</h2><div class="body">
+    <label class="f">Correo de destino del parte<input type="email" id="cfgMail" placeholder="direccion@empresa.com"></label>
+    <label class="f">WhatsApp de destino (móvil)<input type="tel" id="cfgWa" placeholder="600 000 000"></label>
+    <label class="f">Operario por defecto<input id="cfgOp"></label>
+    <p class="note">Al cerrar el parte se abre el panel de envío. Con este número, WhatsApp abre directamente el chat de la oficina; sin él, deja elegir el contacto.</p>
+  </div></section>
+  <button class="btn dark" id="cfgSave">Guardar ajustes</button>
+</main>
+
+<div class="bar" id="bar">
+  <button class="btn" id="bNuevo">Nuevo parte</button>
+  <button class="btn pri" id="bCerrar">Cerrar parte y generar PDF</button>
+</div>
+
+<div class="modal" id="modal" hidden><div class="box">
+  <h3 id="mTit"></h3><div id="mBody" class="note"></div><div class="acts" id="mActs"></div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<script>/* ===== Módulo de análisis de consumos y mantenimiento (compartido por las dos apps) ===== */
+var ANA=(function(){
+  var css='.ana{display:grid;gap:14px;min-width:0}.ana .sec{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden;min-width:0}'+
+  '.ana .sec>h3{margin:0;padding:9px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600}'+
+  '.ana .tw{overflow-x:auto}.ana table{width:100%;border-collapse:collapse;font-size:13px}.ana th,.ana td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}'+
+  '.ana th{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}'+
+  '.ana td.n,.ana th.n{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums}.ana tfoot td{font-weight:700;background:var(--bg)}'+
+  '.ana .kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.ana .k{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:9px 11px}'+
+  '.ana .k .l{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.ana .k .v{font:600 20px var(--f-num);font-variant-numeric:tabular-nums}.ana .k .s{font-size:11.5px;color:var(--muted);font-family:var(--f-num)}'+
+  '.ana .em{padding:14px 12px;color:var(--muted);font-size:13px}.ana .nt{padding:8px 12px;color:var(--muted);font-size:12px;margin:0}'+
+  '.ana .tag{display:inline-block;padding:0 7px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid var(--line)}.ana .tag.c{border-color:var(--accent);color:var(--ink)}'+
+  '.ana svg text{fill:var(--muted);font:11px var(--f-num)}.ana svg .bar{fill:var(--accent)}.ana svg .bar:hover{opacity:.8}.ana svg .grid{stroke:var(--line);stroke-width:1}.ana svg .vl{fill:var(--ink);font-weight:600}'+
+  '.ana .tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--paper);padding:6px 9px;border-radius:6px;font:12px var(--f-num);white-space:nowrap}';
+  function n(v){if(v===""||v==null)return 0;var x=parseFloat(String(v).replace(",","."));return isFinite(x)?x:0}
+  function f(x,d){if(!x)return"–";return x.toLocaleString("es-ES",{maximumFractionDigits:d==null?1:d})}
+  function e(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function fd(s){return s?s.split("-").reverse().join("/"):""}
+  var MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  function mes(s){var p=s.split("-");return MES[+p[1]-1]+" "+p[0]}
+  function ord(a,b){return a.fecha<b.fecha?-1:a.fecha>b.fecha?1:n(a.hIni)-n(b.hIni)}
+  function oils(p){return(p.aceites||[]).filter(function(a){return n(a.litros)>0}).map(function(a){return{desc:a.desc||"—",marca:a.marca||"",op:a.op==="Cambio"?"Cambio":"Relleno",l:n(a.litros)}})}
+
+  function table(cols,rows,foot){
+    if(!rows.length)return'<div class="em">Sin datos en el periodo elegido.</div>';
+    var h='<div class="tw"><table><thead><tr>'+cols.map(function(c){return'<th class="'+(c.n?"n":"")+'">'+c.h+'</th>'}).join("")+'</tr></thead><tbody>';
+    rows.forEach(function(r){h+='<tr>'+cols.map(function(c){return'<td class="'+(c.n?"n":"")+'">'+(c.f?c.f(r):e(r[c.k]))+'</td>'}).join("")+'</tr>'});
+    h+='</tbody>';if(foot)h+='<tfoot><tr>'+cols.map(function(c){var v=foot[c.k];return'<td class="'+(c.n?"n":"")+'">'+(v==null?"":(typeof v==="number"?f(v,c.d):e(v)))+'</td>'}).join("")+'</tr></tfoot>';
+    return h+'</table></div>'}
+
+  function chart(items,unit){ /* items: [{label, v, tip}] — una serie, barras desde cero */
+    if(!items.length)return'<div class="em">Sin repostajes en el periodo elegido.</div>';
+    var W=Math.max(320,items.length*44+60),H=190,L=44,B=24,T=16,max=Math.max.apply(null,items.map(function(i){return i.v}))||1;
+    var step=Math.pow(10,Math.floor(Math.log10(max)));var nice=[1,2,2.5,5,10].map(function(m){return m*step}).find(function(s){return max/s<=5})||step*10;
+    var top=Math.ceil(max/nice)*nice,y=function(v){return T+(H-T-B)*(1-v/top)},bw=Math.min(34,(W-L-10)/items.length-6);
+    var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Gasóleo por periodo">';
+    for(var g=0;g<=top+1e-9;g+=nice){s+='<line class="grid" x1="'+L+'" x2="'+(W-6)+'" y1="'+y(g)+'" y2="'+y(g)+'"/><text x="'+(L-6)+'" y="'+(y(g)+4)+'" text-anchor="end">'+f(g,0).replace("–","0")+'</text>'}
+    items.forEach(function(it,i){var cx=L+8+i*((W-L-14)/items.length)+((W-L-14)/items.length-bw)/2,yy=y(it.v),h=Math.max(0,y(0)-yy),r=Math.min(4,h,bw/2);
+      s+='<path class="bar" data-tip="'+e(it.tip)+'" d="M'+cx+','+y(0)+'V'+(yy+r)+'Q'+cx+','+yy+' '+(cx+r)+','+yy+'H'+(cx+bw-r)+'Q'+(cx+bw)+','+yy+' '+(cx+bw)+','+(yy+r)+'V'+y(0)+'Z"/>';
+      s+='<text x="'+(cx+bw/2)+'" y="'+(H-7)+'" text-anchor="middle">'+e(it.label)+'</text>';
+      if(i===items.length-1||it.v===max)s+='<text class="vl" x="'+(cx+bw/2)+'" y="'+(yy-4)+'" text-anchor="middle">'+f(it.v,0)+'</text>'});
+    return'<div class="tw" style="padding:8px 4px 2px">'+s+'</svg></div><p class="nt">Litros de gasóleo (A + B). Pasa el dedo o el ratón por una barra para ver el detalle.</p>'}
+
+  /* Estado de aceites por máquina: usa todo el historial de la máquina, no solo el periodo */
+  function estado(all){
+    var byM={};all.slice().sort(ord).forEach(function(p){(byM[p.maquina]=byM[p.maquina]||[]).push(p)});
+    var rows=[];Object.keys(byM).sort().forEach(function(m){
+      var ps=byM[m],hNow=Math.max.apply(null,ps.map(function(p){return n(p.hFin)})),kinds={};
+      ps.forEach(function(p){oils(p).forEach(function(o){var k=kinds[o.desc]=kinds[o.desc]||{ch:[],rel:[]};(o.op==="Cambio"?k.ch:k.rel).push({h:n(p.hFin),fecha:p.fecha,l:o.l})})});
+      Object.keys(kinds).sort().forEach(function(d){var k=kinds[d],last=k.ch[k.ch.length-1];
+        var ints=[];for(var i=1;i<k.ch.length;i++)ints.push(k.ch[i].h-k.ch[i-1].h);
+        var relDesde=k.rel.filter(function(r){return!last||r.h>=last.h}).reduce(function(s,r){return s+r.l},0);
+        rows.push({m:m,d:d,uf:last?fd(last.fecha):"Sin cambio registrado",uh:last?last.h:0,desde:last?hNow-last.h:0,rel:relDesde,ncam:k.ch.length,
+          med:ints.length?ints.reduce(function(a,b){return a+b},0)/ints.length:0,hNow:hNow,hasLast:!!last})})});
+    return rows}
+
+  function render(el,partes,all,opts){
+    opts=opts||{};
+    if(!document.getElementById("anaCss")){var st=document.createElement("style");st.id="anaCss";st.textContent=css;document.head.appendChild(st)}
+    var ps=partes.slice().sort(ord),allS=(all||partes).slice().sort(ord);
+    /* repostajes con horas desde el repostaje anterior de la misma máquina (sobre todo el historial) */
+    var prevH={},rep=[];allS.forEach(function(p){var g=n(p.gasA)+n(p.gasB);if(g>0){var ph=prevH[p.maquina];
+      if(ps.indexOf(p)>=0||partes.indexOf(p)>=0)rep.push({p:p,fecha:p.fecha,m:p.maquina,op:p.operario||"",h:n(p.hFin),a:n(p.gasA),b:n(p.gasB),g:g,dh:ph!=null?n(p.hFin)-ph:0});
+      prevH[p.maquina]=n(p.hFin)}});
+    var inSet={};ps.forEach(function(p){inSet[p.id||p.maquina+p.fecha+p.hIni]=1});
+    rep=rep.filter(function(r){return inSet[r.p.id||r.p.maquina+r.p.fecha+r.p.hIni]});
+    var ace=[];var prevCh={};allS.forEach(function(p){oils(p).forEach(function(o){var key=p.maquina+"|"+o.desc,ph=prevCh[key];
+      if(inSet[p.id||p.maquina+p.fecha+p.hIni])ace.push({fecha:p.fecha,m:p.maquina,h:n(p.hFin),d:o.desc,mk:o.marca,op:o.op,l:o.l,dh:o.op==="Cambio"&&ph!=null?n(p.hFin)-ph:0});
+      if(o.op==="Cambio")prevCh[key]=n(p.hFin)})});
+    var horas=ps.reduce(function(s,p){return s+Math.max(0,n(p.hFin)-n(p.hIni))},0),gal=rep.reduce(function(s,r){return s+r.g},0);
+    var rel=ace.filter(function(a){return a.op==="Relleno"}),cam=ace.filter(function(a){return a.op==="Cambio"});
+    var k=function(l,v,s){return'<div class="k"><div class="l">'+l+'</div><div class="v">'+v+'</div>'+(s?'<div class="s">'+s+'</div>':"")+'</div>'};
+    var h='<div class="kp">'+k("Repostajes",rep.length,rep.length?f(gal/rep.length,0)+" L de media":"")+k("Gasóleo",f(gal,0)+" L","A "+f(rep.reduce(function(s,r){return s+r.a},0),0)+" · B "+f(rep.reduce(function(s,r){return s+r.b},0),0))+
+      k("Horas máquina",f(horas)+" h","según horómetro")+k("Consumo medio",horas?f(gal/horas,1)+" L/h":"–","gasóleo ÷ horas de los partes")+
+      k("Aceite rellenado",f(rel.reduce(function(s,a){return s+a.l},0))+" L",rel.length+" rellenos")+k("Cambios de aceite",cam.length,f(cam.reduce(function(s,a){return s+a.l},0))+" L")+'</div>';
+    /* gráfico: por mes, o por día si solo hay un mes */
+    var meses={};rep.forEach(function(r){var mk=r.fecha.slice(0,7);meses[mk]=(meses[mk]||0)+r.g});
+    var mk=Object.keys(meses).sort(),items;
+    if(mk.length>1)items=mk.map(function(m){var rs=rep.filter(function(r){return r.fecha.slice(0,7)===m});return{label:mes(m+"-01"),v:meses[m],tip:mes(m+"-01")+": "+f(meses[m],0)+" L en "+rs.length+" repostajes"}});
+    else{var dias={};rep.forEach(function(r){dias[r.fecha]=(dias[r.fecha]||0)+r.g});items=Object.keys(dias).sort().map(function(d){return{label:d.slice(8),v:dias[d],tip:fd(d)+": "+f(dias[d],0)+" L"}})}
+    h+='<div class="sec"><h3>Gasóleo '+(mk.length>1?"por mes":"por día"+(mk.length?" · "+mes(mk[0]+"-01"):""))+'</h3>'+chart(items)+'</div>';
+    /* tabla mensual por máquina */
+    var g={};ps.forEach(function(p){var key=p.fecha.slice(0,7)+"|"+p.maquina,o=g[key]=g[key]||{mes:mes(p.fecha),mk:p.fecha.slice(0,7),m:p.maquina,nr:0,a:0,b:0,g:0,h:0,rel:0,cam:0};
+      var gg=n(p.gasA)+n(p.gasB);if(gg>0)o.nr++;o.a+=n(p.gasA);o.b+=n(p.gasB);o.g+=gg;o.h+=Math.max(0,n(p.hFin)-n(p.hIni));
+      oils(p).forEach(function(x){if(x.op==="Cambio")o.cam++;else o.rel+=x.l})});
+    var gm=Object.keys(g).sort().map(function(x){var o=g[x];o.lh=o.h?o.g/o.h:0;return o});
+    var sum=function(a,kk){return a.reduce(function(s,r){return s+(r[kk]||0)},0)};
+    var tot={mes:"Total",nr:sum(gm,"nr"),a:sum(gm,"a"),b:sum(gm,"b"),g:sum(gm,"g"),h:sum(gm,"h"),rel:sum(gm,"rel"),cam:sum(gm,"cam")};tot.lh=tot.h?tot.g/tot.h:0;
+    h+='<div class="sec"><h3>Resumen mensual por máquina'+(opts.csv?' <button class="btn small" data-ana-csv="mes">CSV</button>':"")+'</h3>'+table([{h:"Mes",k:"mes"},{h:"Máquina",k:"m"},{h:"Repost.",k:"nr",n:1,d:0,f:function(r){return f(r.nr,0)}},
+      {h:"Gasóleo A L",k:"a",n:1,d:0,f:function(r){return f(r.a,0)}},{h:"Gasóleo B L",k:"b",n:1,d:0,f:function(r){return f(r.b,0)}},{h:"Total L",k:"g",n:1,d:0,f:function(r){return f(r.g,0)}},
+      {h:"Horas máq.",k:"h",n:1,f:function(r){return f(r.h)}},{h:"L/h",k:"lh",n:1,f:function(r){return f(r.lh)}},{h:"Aceite relleno L",k:"rel",n:1,f:function(r){return f(r.rel)}},{h:"Cambios aceite",k:"cam",n:1,d:0,f:function(r){return f(r.cam,0)}}],gm,tot)+'</div>';
+    /* estado de aceites */
+    var es=estado(opts.allMachine||allS);
+    h+='<div class="sec"><h3>Estado de aceites por máquina</h3><p class="nt">Con todo el historial de cada máquina. Horómetro tomado al final del parte en que se hizo el cambio o el relleno.</p>'+
+      table([{h:"Máquina",k:"m"},{h:"Aceite",k:"d"},{h:"Último cambio",k:"uf"},{h:"Horómetro cambio",k:"uh",n:1,f:function(r){return r.hasLast?f(r.uh,0):"–"}},
+      {h:"Horas desde el cambio",k:"desde",n:1,f:function(r){return r.hasLast?"<b>"+f(r.desde,0)+"</b>":"–"}},{h:"Rellenos desde el cambio L",k:"rel",n:1,f:function(r){return f(r.rel)}},
+      {h:"Cambios registrados",k:"ncam",n:1,f:function(r){return f(r.ncam,0)}},{h:"Intervalo medio h",k:"med",n:1,f:function(r){return f(r.med,0)}}],es)+'</div>';
+    /* registro de repostajes */
+    h+='<div class="sec"><h3>Registro de repostajes'+(opts.csv?' <button class="btn small" data-ana-csv="rep">CSV</button>':"")+'</h3><p class="nt">L/h entre repostajes = litros repostados ÷ horas desde el repostaje anterior de la misma máquina. Solo es fiable si se llena el depósito cada vez.</p>'+
+      table([{h:"Fecha",k:"fecha",f:function(r){return fd(r.fecha)}},{h:"Máquina",k:"m"},{h:"Operario",k:"op"},{h:"Horómetro",k:"h",n:1,f:function(r){return f(r.h,0)}},
+      {h:"Gasóleo A",k:"a",n:1,d:0,f:function(r){return f(r.a,0)}},{h:"Gasóleo B",k:"b",n:1,d:0,f:function(r){return f(r.b,0)}},{h:"h desde anterior",k:"dh",n:1,f:function(r){return f(r.dh)}},
+      {h:"L/h entre repost.",k:"lh",n:1,f:function(r){return r.dh>0?f(r.g/r.dh):"–"}}],rep.slice().reverse(),{fecha:"Total",a:sum(rep,"a"),b:sum(rep,"b")})+'</div>';
+    /* registro de aceites */
+    h+='<div class="sec"><h3>Registro de aceites'+(opts.csv?' <button class="btn small" data-ana-csv="ace">CSV</button>':"")+'</h3>'+
+      table([{h:"Fecha",k:"fecha",f:function(r){return fd(r.fecha)}},{h:"Máquina",k:"m"},{h:"Horómetro",k:"h",n:1,f:function(r){return f(r.h,0)}},{h:"Aceite",k:"d"},{h:"Marca",k:"mk"},
+      {h:"Operación",k:"op",f:function(r){return'<span class="tag'+(r.op==="Cambio"?" c":"")+'">'+r.op+'</span>'}},{h:"Litros",k:"l",n:1,f:function(r){return f(r.l)}},
+      {h:"h desde cambio anterior",k:"dh",n:1,f:function(r){return r.op==="Cambio"?f(r.dh,0):""}}],ace.slice().reverse(),{fecha:"Total",l:sum(ace,"l")})+'</div>';
+    el.innerHTML='<div class="ana">'+h+'</div>';
+    /* tooltip */
+    var tip=document.querySelector(".ana .tip")||null;
+    el.querySelectorAll("[data-tip]").forEach(function(b){
+      var show=function(ev){if(!tip){tip=document.createElement("div");tip.className="tip";document.body.appendChild(tip);tip.classList.add("ana")}
+        tip.textContent=b.getAttribute("data-tip");tip.hidden=false;var x=(ev.touches?ev.touches[0]:ev).clientX,y=(ev.touches?ev.touches[0]:ev).clientY;
+        tip.style.left=Math.min(window.innerWidth-tip.offsetWidth-8,Math.max(8,x-tip.offsetWidth/2))+"px";tip.style.top=Math.max(8,y-44)+"px"};
+      b.addEventListener("mousemove",show);b.addEventListener("touchstart",show,{passive:true});
+      b.addEventListener("mouseleave",function(){if(tip)tip.hidden=true});b.addEventListener("touchend",function(){setTimeout(function(){if(tip)tip.hidden=true},1500)})});
+    if(opts.csv)el.querySelectorAll("[data-ana-csv]").forEach(function(b){b.onclick=function(){var t=b.getAttribute("data-ana-csv");
+      if(t==="mes")opts.csv("Consumos_mensuales",["Mes","Máquina","Repostajes","Gasóleo A L","Gasóleo B L","Total L","Horas máquina","L/h","Aceite relleno L","Cambios aceite"],gm.map(function(r){return[r.mk,r.m,r.nr,r.a,r.b,r.g,r.h,r.lh,r.rel,r.cam]}));
+      if(t==="rep")opts.csv("Registro_repostajes",["Fecha","Máquina","Operario","Horómetro","Gasóleo A L","Gasóleo B L","Total L","h desde repostaje anterior","L/h entre repostajes"],rep.map(function(r){return[r.fecha,r.m,r.op,r.h,r.a,r.b,r.g,r.dh,r.dh>0?r.g/r.dh:""]}));
+      if(t==="ace")opts.csv("Registro_aceites",["Fecha","Máquina","Horómetro","Aceite","Marca","Operación","Litros","h desde cambio anterior"],ace.map(function(r){return[r.fecha,r.m,r.h,r.d,r.mk,r.op,r.l,r.op==="Cambio"?r.dh:""]}))}})}
+  return{render:render};
+})();
+</script>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const TIPOS=["Servicio cantera","Desescombro","Acopios","Escombrera","Restauración","Molino","Otros servicios"];
+const PARADAS=["Mantenimiento","Ruedas","Avería","Falta operario","Sin trabajo"];
+const ACEITES_FIJOS=["Motor 14W40","Hidráulico 10W20","Perforación"];
+const MANT=["Lavar","Engrasar","Cambio filtros","Cambio aceites"];
+const APP_VER="2.0";
+/* Lista de máquinas de la empresa. Se usa si el teléfono no tiene otra configurada. */
+const MAQUINAS_EMPRESA=["EX-13","EX-05","DU-02","DU-03","DU-18","DU-13","CA-13","CA-16","CA-17","CA-45","CA-50","AX-02","PE-12","PE-18","PE-21","PE-28"];
+const K={draft:"dfgpm_draft",cfg:"dfgpm_cfg",hist:"dfgpm_hist",last:"dfgpm_last",dev:"dfgpm_dev",reg:"dfgpm_reg"};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+let cfg=Object.assign({maquinas:[],canteras:["Blanco Perla","Blanco Berrocal","Blanco Castilla","Planta de áridos"],mail:"",operario:""},store.get(K.cfg,{}));
+/* Las máquinas las fija la empresa: lista integrada o archivo de configuración de la oficina */
+if(!cfg.cfgFile||!(cfg.maquinas||[]).length)cfg.maquinas=MAQUINAS_EMPRESA.slice();
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+let DEV=store.get(K.dev,null);if(!DEV){DEV="M"+Math.random().toString(36).slice(2,8).toUpperCase();store.set(K.dev,DEV)}
+/* Últimas horas finales cerradas por máquina: {maquina:{h,fecha}} */
+const lastH=m=>{const l=store.get(K.last,{})[m];return l?l:null};
+const num=v=>{if(v===""||v==null)return 0;const n=parseFloat(String(v).replace(",","."));return isFinite(n)?n:NaN};
+const fmt=n=>(Math.round(n*100)/100).toLocaleString("es-ES");
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+
+function blank(mq){const m=mq||"";const l=lastH(m);return{id:uid(),fecha:today(),maquina:m,operario:cfg.operario||"",hIni:l?String(l.h):"",hIniAuto:!!l,hFin:"",
+  trabajos:[{tipo:"",cantera:"",nivel:"",hn:"",he:"",viajes:"",rCarga:"",rPica:"",mPerf:""}],
+  gasA:"",gasB:"",aceites:ACEITES_FIJOS.map(d=>({desc:d,marca:"",litros:""})),
+  paradas:Object.fromEntries(PARADAS.map(p=>[p,{n:"",e:""}])),mant:{},filtros:[],repInt:false,repExt:false,proveedor:"",obs:"",firma:""}}
+let P=store.get(K.draft,null)||blank();if(!P.id)P.id=uid();
+if(P.maquina&&!cfg.maquinas.includes(P.maquina)){P.maquina="";P.hIni="";P.hIniAuto=false;}
+
+/* ---------- render ---------- */
+function opts(list,sel,ph){const l=list.includes(sel)||!sel?list:[sel,...list];return `<option value=""${sel?"":" selected"}>${ph||"— Elegir —"}</option>`+l.map(o=>`<option${o===sel?" selected":""}>${esc(o)}</option>`).join("")}
+function renderTrab(){
+  $("#trabajos").innerHTML=P.trabajos.map((t,i)=>`<div class="card" data-i="${i}">
+   <div class="hd"><span>Trabajo ${i+1}</span>${P.trabajos.length>1?`<button class="x" data-del="${i}" aria-label="Eliminar trabajo">×</button>`:""}</div>
+   <div class="grid2"><label class="f">Tipo<select data-k="tipo">${opts(TIPOS,t.tipo)}</select></label>
+   <label class="f">Cantera<select data-k="cantera">${opts(cfg.canteras,t.cantera)}</select></label></div>
+   <div class="grid3"><label class="f">Nivel<input data-k="nivel" value="${esc(t.nivel)}"></label>
+   <label class="f">H. normales<input data-k="hn" inputmode="decimal" value="${esc(t.hn)}"></label>
+   <label class="f">H. extra<input data-k="he" inputmode="decimal" value="${esc(t.he)}"></label>
+   <label class="f">Viajes dúmper<input data-k="viajes" inputmode="numeric" value="${esc(t.viajes)}"></label>
+   <label class="f">Retro carga (h)<input data-k="rCarga" inputmode="decimal" value="${esc(t.rCarga)}"></label>
+   <label class="f">Pica-pica (h)<input data-k="rPica" inputmode="decimal" value="${esc(t.rPica)}"></label>
+   <label class="f">Metros perforación<input data-k="mPerf" inputmode="decimal" value="${esc(t.mPerf)}"></label></div></div>`).join("");
+}
+function renderAce(){
+  $("#aceites").innerHTML=P.aceites.map((a,i)=>`<div class="card" data-i="${i}">
+   <div class="hd">${ACEITES_FIJOS.includes(a.desc)&&i<3?`<span>${esc(a.desc)}</span>`:`<input data-k="desc" placeholder="Descripción aceite" value="${esc(a.desc)}"><button class="x" data-del="${i}" aria-label="Eliminar">×</button>`}</div>
+   <div class="grid3"><label class="f">Operación<select data-k="op">${opts(["Relleno","Cambio"],a.op||"")}</select></label>
+   <label class="f">Marca<input data-k="marca" value="${esc(a.marca)}"></label>
+   <label class="f">Litros<input data-k="litros" inputmode="decimal" value="${esc(a.litros)}"></label></div></div>`).join("");
+}
+function renderPar(){
+  $("#paradas").innerHTML=`<tr><td></td><td class="note">Normal</td><td class="note">Extra</td></tr>`+
+   PARADAS.map(p=>`<tr><td>${p}</td><td><input data-p="${p}" data-k="n" inputmode="decimal" value="${esc(P.paradas[p]?.n)}"></td><td><input data-p="${p}" data-k="e" inputmode="decimal" value="${esc(P.paradas[p]?.e)}"></td></tr>`).join("");
+}
+function renderMant(){
+  $("#mantChecks").innerHTML=MANT.map(m=>`<label class="check"><input type="checkbox" data-m="${m}"${P.mant[m]?" checked":""}> ${m}</label>`).join("");
+  $("#filtros").innerHTML=P.filtros.map((f,i)=>`<div class="card" data-i="${i}"><div class="hd"><span>Filtro / repuesto ${i+1}</span><button class="x" data-del="${i}" aria-label="Eliminar">×</button></div>
+   <label class="f">Descripción<input data-k="desc" value="${esc(f.desc)}"></label>
+   <div class="grid3"><label class="f">Uds<input data-k="uds" inputmode="numeric" value="${esc(f.uds)}"></label>
+   <label class="f">Referencia<input data-k="ref" value="${esc(f.ref)}"></label>
+   <label class="f">Marca<input data-k="marca" value="${esc(f.marca)}"></label></div></div>`).join("");
+}
+function renderAll(){
+  $("#maquina").innerHTML=cfg.maquinas.length?opts(cfg.maquinas,P.maquina,"— Elegir máquina —"):`<option value="">Sin máquinas: configúralas en Ajustes</option>`;
+  for(const id of ["fecha","operario","hIni","hFin","gasA","gasB","proveedor","obs"])$("#"+id).value=P[id]??"";
+  $("#repInt").checked=!!P.repInt;$("#repExt").checked=!!P.repExt;
+  renderTrab();renderAce();renderPar();renderMant();loadSig();update();
+}
+
+/* ---------- cálculos y validación ---------- */
+function totals(){
+  const hor=num(P.hFin)-num(P.hIni);
+  let tn=0,te=0,pn=0,pe=0;P.trabajos.forEach(t=>{tn+=num(t.hn)||0;te+=num(t.he)||0});
+  PARADAS.forEach(p=>{pn+=num(P.paradas[p]?.n)||0;pe+=num(P.paradas[p]?.e)||0});
+  return{hor,tn,te,pn,pe,trab:tn+te,par:pn+pe};
+}
+function checks(strict){
+  const e=[],w=[],T=totals();
+  if(!P.fecha)e.push("Falta la fecha.");
+  if(!P.maquina)e.push(cfg.maquinas.length?"Falta el código de máquina.":"No hay máquinas configuradas. Añádelas en Ajustes.");
+  else{const l=lastH(P.maquina);if(l&&P.hIni!==""&&!isNaN(num(P.hIni))&&l.fecha<=P.fecha){const d=num(P.hIni)-l.h;
+    if(d<0)w.push(`Horas iniciales (${P.hIni}) menores que las finales del último parte de ${P.maquina} (${l.h}).`);
+    else if(d>0.5)w.push(`Hay ${fmt(d)} h de horómetro sin parte desde el último cierre de ${P.maquina} (${l.h}).`)}}
+  if(!P.operario.trim())e.push("Falta el nombre del operario.");
+  P.trabajos.forEach((t,i)=>{const used=["hn","he","viajes","rCarga","rPica","mPerf","nivel"].some(k=>t[k]!==""&&t[k]!=null);
+    if(used||P.trabajos.length>1){if(!t.tipo)e.push(`Trabajo ${i+1}: falta el tipo de trabajo.`);if(!t.cantera)e.push(`Trabajo ${i+1}: falta la cantera.`)}});
+  P.aceites.forEach(a=>{if(num(a.litros)>0&&!a.op)e.push(`Aceite ${a.desc||""}: indica si es Relleno o Cambio.`)});
+  if(P.hIni===""||P.hFin==="")e.push("Faltan las horas inicial o final del horómetro.");
+  else if(isNaN(num(P.hIni))||isNaN(num(P.hFin)))e.push("Las horas del horómetro deben ser números.");
+  else if(T.hor<0)e.push("Las horas finales son menores que las iniciales.");
+  else{
+    if(T.hor>24)w.push(`El horómetro marca ${fmt(T.hor)} h en un día. Revisa las lecturas.`);
+    if(T.trab>0&&Math.abs(T.hor-T.trab)>0.5&&Math.abs(T.hor-T.trab-T.par)>0.5)w.push(`Horómetro ${fmt(T.hor)} h no cuadra con trabajo ${fmt(T.trab)} h ni con trabajo + parada ${fmt(T.trab+T.par)} h.`);
+  }
+  if(T.trab===0&&T.par===0)w.push("No hay horas de trabajo ni de parada registradas.");
+  if((num(P.paradas["Avería"]?.n)||num(P.paradas["Avería"]?.e))&&!P.obs.trim())w.push("Hay horas de avería: describe la avería en observaciones.");
+  if(strict&&!P.firma)w.push("El parte no está firmado.");
+  return{e,w,T};
+}
+function update(){
+  const {e,w,T}=checks(false);
+  const hc=P.hIni!==""&&P.hFin!==""&&!isNaN(T.hor)?(T.hor<0?"bad":(T.trab>0&&Math.abs(T.hor-T.trab)>0.5&&Math.abs(T.hor-T.trab-T.par)>0.5?"warn":"ok")):"";
+  $("#calc").innerHTML=`<span class="chip ${hc}">Horómetro ${P.hIni!==""&&P.hFin!==""?fmt(T.hor):"–"} h</span><span class="chip">Trabajo ${fmt(T.trab)} h</span>${P.hIniAuto?`<span class="chip">Inicio = último parte ${esc(P.maquina)}</span>`:""}<span class="chip">Parada ${fmt(T.par)} h</span>`;
+  $("#hdrNum").textContent=numParte(P);
+  store.set(K.draft,P);
+}
+function numParte(p){return `${(p.maquina||"MAQ").replace(/\s+/g,"")}-${(p.fecha||"").replace(/-/g,"")}`}
+
+/* ---------- eventos ---------- */
+function bindList(sel,arr,rerender){
+  $(sel).addEventListener("input",ev=>{const c=ev.target.closest("[data-i]");if(!c||!ev.target.dataset.k)return;arr()[+c.dataset.i][ev.target.dataset.k]=ev.target.value;update()});
+  $(sel).addEventListener("change",ev=>{const c=ev.target.closest("[data-i]");if(!c||!ev.target.dataset.k)return;arr()[+c.dataset.i][ev.target.dataset.k]=ev.target.value;update()});
+  $(sel).addEventListener("click",ev=>{const d=ev.target.dataset.del;if(d==null)return;arr().splice(+d,1);rerender();update()});
+}
+bindList("#trabajos",()=>P.trabajos,renderTrab);
+bindList("#aceites",()=>P.aceites,renderAce);
+bindList("#filtros",()=>P.filtros,renderMant);
+$("#addTrab").onclick=()=>{P.trabajos.push({tipo:"",cantera:"",nivel:"",hn:"",he:"",viajes:"",rCarga:"",rPica:"",mPerf:""});renderTrab();update()};
+$("#addAceite").onclick=()=>{P.aceites.push({desc:"",marca:"",litros:""});renderAce();update()};
+$("#addFiltro").onclick=()=>{P.filtros.push({desc:"",uds:"",ref:"",marca:""});renderMant();update()};
+$("#paradas").addEventListener("input",ev=>{const p=ev.target.dataset.p;if(!p)return;P.paradas[p]=P.paradas[p]||{n:"",e:""};P.paradas[p][ev.target.dataset.k]=ev.target.value;update()});
+$("#mantChecks").addEventListener("change",ev=>{const m=ev.target.dataset.m;if(m){P.mant[m]=ev.target.checked;update()}});
+for(const id of ["fecha","operario","hIni","hFin","gasA","gasB","proveedor","obs"])$("#"+id).addEventListener("input",ev=>{P[id]=ev.target.value;if(id==="hIni")P.hIniAuto=false;update()});
+$("#maquina").addEventListener("change",ev=>{P.maquina=ev.target.value;
+  if(P.hIni===""||P.hIniAuto){const l=lastH(P.maquina);P.hIni=l?String(l.h):"";P.hIniAuto=!!l;$("#hIni").value=P.hIni;
+    toast(l?`Horas iniciales tomadas del último parte de ${P.maquina}: ${l.h}`:`Sin partes anteriores de ${P.maquina}: escribe las horas iniciales`)}
+  update()});
+for(const id of ["repInt","repExt"])$("#"+id).addEventListener("change",ev=>{P[id]=ev.target.checked;update()});
+
+/* ---------- firma ---------- */
+const cv=$("#sig"),cx=cv.getContext("2d");let drawing=false,dirty=false;
+function sizeSig(){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=r.width*d;cv.height=r.height*d;cx.setTransform(d,0,0,d,0,0);cx.lineWidth=2.2;cx.lineCap="round";cx.lineJoin="round";cx.strokeStyle="#111"}
+function loadSig(){sizeSig();if(P.firma){const im=new Image();im.onload=()=>cx.drawImage(im,0,0,cv.getBoundingClientRect().width,150);im.src=P.firma}}
+function pt(e){const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
+cv.addEventListener("pointerdown",e=>{drawing=true;cv.setPointerCapture(e.pointerId);const[x,y]=pt(e);cx.beginPath();cx.moveTo(x,y)});
+cv.addEventListener("pointermove",e=>{if(!drawing)return;const[x,y]=pt(e);cx.lineTo(x,y);cx.stroke();dirty=true});
+const endSig=()=>{if(!drawing)return;drawing=false;if(dirty){P.firma=cv.toDataURL("image/png");update()}};
+cv.addEventListener("pointerup",endSig);cv.addEventListener("pointercancel",endSig);
+$("#sigClear").onclick=()=>{cx.clearRect(0,0,cv.width,cv.height);P.firma="";dirty=false;update()};
+window.addEventListener("resize",()=>{if(!$("#v-parte").hidden)loadSig()});
+
+/* ---------- UI helpers ---------- */
+function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>el.hidden=true,2800)}
+function modal(tit,html,acts){$("#mTit").textContent=tit;$("#mBody").innerHTML=html;$("#mActs").innerHTML="";
+  acts.forEach(a=>{const b=document.createElement("button");b.className="btn "+(a.cls||"");b.textContent=a.t;b.onclick=()=>{$("#modal").hidden=true;a.f&&a.f()};$("#mActs").appendChild(b)});$("#modal").hidden=false}
+function tab(name){for(const n of ["parte","hist","reg","ajustes"]){$("#v-"+n).hidden=n!==name;$("#tab-"+n).setAttribute("aria-selected",n===name)}
+  $("#bar").hidden=name!=="parte";if(name==="hist")renderHist();if(name==="reg")renderReg();if(name==="ajustes")renderCfg();if(name==="parte")loadSig();window.scrollTo(0,0)}
+$("#tab-parte").onclick=()=>tab("parte");$("#tab-hist").onclick=()=>tab("hist");$("#tab-ajustes").onclick=()=>tab("ajustes");$("#tab-reg").onclick=()=>tab("reg");
+/* ---------- registros (copia ligera de cada parte cerrado, sin firma) ---------- */
+function regAdd(p){const q=JSON.parse(JSON.stringify(p));delete q.firma;delete q.hIniAuto;q.firmado=!!p.firma;
+  const r=store.get(K.reg,[]).filter(x=>x.id!==q.id);r.push(q);r.sort((a,b)=>a.fecha<b.fecha?-1:1);
+  let keep=r.slice(-3000);while(!store.set(K.reg,keep)&&keep.length>100)keep=keep.slice(Math.floor(keep.length*.2))}
+(function(){if(!store.get(K.reg,null)){store.set(K.reg,[]);store.get(K.hist,[]).slice().reverse().forEach(regAdd)}})();
+function setRPer(k){const d=new Date(),y=d.getFullYear(),m=d.getMonth(),iso=x=>new Date(x-x.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  const r={mes:[new Date(y,m,1),new Date(y,m+1,0)],mesant:[new Date(y,m-1,1),new Date(y,m,0)],anio:[new Date(y,0,1),new Date(y,11,31)]}[k];
+  $("#rDesde").value=r?iso(r[0]):"";$("#rHasta").value=r?iso(r[1]):"";renderReg()}
+document.querySelectorAll("[data-rper]").forEach(b=>b.onclick=()=>setRPer(b.dataset.rper));
+["rMaq","rDesde","rHasta"].forEach(id=>$("#"+id).addEventListener("change",renderReg));
+function renderReg(){const all=store.get(K.reg,[]),cur=$("#rMaq").value,ms=[...new Set(all.map(p=>p.maquina).filter(Boolean))].sort();
+  $("#rMaq").innerHTML=`<option value="">Todas</option>`+ms.map(m=>`<option${m===cur?" selected":""}>${esc(m)}</option>`).join("");
+  const m=$("#rMaq").value,d=$("#rDesde").value,h=$("#rHasta").value,byM=all.filter(p=>!m||p.maquina===m);
+  if(!all.length){$("#regOut").innerHTML=`<p class="note">Aún no hay partes cerrados en este teléfono. Al cerrar partes con gasóleo o aceites, aquí verás los repostajes, cambios de aceite y consumos por mes y por horas de máquina.</p>`;return}
+  ANA.render($("#regOut"),byM.filter(p=>(!d||p.fecha>=d)&&(!h||p.fecha<=h)),byM)}
+
+/* ---------- PDF ---------- */
+function buildPDF(p){
+  const {jsPDF}=window.jspdf;const d=new jsPDF({unit:"mm",format:"a4"});const W=210,M=12;
+  d.setProperties({title:"Parte maquinaria "+numParte(p),subject:"DFG-PARTE-MAQUINARIA",author:p.operario||"",creator:"DFG Parte Maquinaria "+APP_VER,
+    keywords:"DFGDATA:"+b64(JSON.stringify(payload(p,false)))+":END"});
+  const T=(()=>{const o=P;P=p;const t=totals();P=o;return t})();
+  const v=x=>(x===""||x==null)?"":String(x);
+  d.setFillColor(31,42,46);d.rect(0,0,W,24,"F");
+  d.setTextColor(243,241,234);d.setFont("helvetica","bold");d.setFontSize(20);d.text("DFG",M,13);
+  d.setFontSize(6);d.text("NATURAL STONE",M,17.5);
+  d.setFontSize(14);d.text("PARTE MAQUINARIA",W/2,14,{align:"center"});
+  d.setFontSize(9);d.setTextColor(217,166,46);d.text("Nº "+numParte(p),W-M,11,{align:"right"});
+  d.setTextColor(243,241,234);d.setFont("helvetica","normal");d.setFontSize(7);d.text("DFG Madrid, S.L.",W-M,17,{align:"right"});
+  d.setTextColor(20,20,20);
+  const fch=p.fecha?p.fecha.split("-").reverse().join("/"):"";
+  const base={theme:"grid",styles:{fontSize:8.5,cellPadding:1.8,lineColor:[180,186,184],lineWidth:.2,textColor:[20,20,20]},
+    headStyles:{fillColor:[232,235,233],textColor:[40,40,40],fontStyle:"bold",fontSize:7.5},margin:{left:M,right:M}};
+  d.autoTable({...base,startY:29,body:[
+    [{content:"FECHA",styles:{fontStyle:"bold"}},fch,{content:"CÓDIGO MÁQUINA",styles:{fontStyle:"bold"}},v(p.maquina)],
+    [{content:"OPERARIO",styles:{fontStyle:"bold"}},{content:v(p.operario),colSpan:3}],
+    [{content:"HORAS INICIALES",styles:{fontStyle:"bold"}},v(p.hIni),{content:"HORAS FINALES",styles:{fontStyle:"bold"}},v(p.hFin)],
+    [{content:"HORAS HORÓMETRO",styles:{fontStyle:"bold"}},fmt(T.hor)+" h",{content:"TRABAJO / PARADA",styles:{fontStyle:"bold"}},`${fmt(T.trab)} h / ${fmt(T.par)} h`]],
+    columnStyles:{0:{cellWidth:38},2:{cellWidth:42}}});
+  const sec=t=>{const y=d.lastAutoTable.finalY+6;d.setFont("helvetica","bold");d.setFontSize(9);d.text(t,M,y);return y+1.5};
+  d.autoTable({...base,startY:sec("TIPO DE TRABAJO"),head:[["Tipo","Cantera","Nivel","H. norm.","H. extra","Viajes dúmper","Retro carga","Pica-pica","m perf."]],
+    body:p.trabajos.map(t=>[t.tipo,t.cantera,v(t.nivel),v(t.hn),v(t.he),v(t.viajes),v(t.rCarga),v(t.rPica),v(t.mPerf)]),
+    foot:[["Total","","",fmt(T.tn),fmt(T.te),"","","",""]],footStyles:{fillColor:[245,246,245],textColor:[20,20,20],fontStyle:"bold"}});
+  const ace=p.aceites.filter(a=>a.desc||a.marca||a.litros);
+  const yC=sec("CONSUMOS MAQUINARIA");
+  d.autoTable({...base,startY:yC,tableWidth:58,head:[["Combustible","Litros"]],body:[["Gasóleo A",v(p.gasA)],["Gasóleo B",v(p.gasB)]]});
+  d.autoTable({...base,startY:yC,margin:{left:M+62,right:M},head:[["Aceite","Operación","Marca","Litros"]],body:ace.length?ace.map(a=>[a.desc,v(a.op),v(a.marca),v(a.litros)]):[["—","","",""]]});
+  d.autoTable({...base,startY:sec("PARADA MAQUINARIA"),tableWidth:110,head:[["Motivo","H. normal","H. extra"]],
+    body:PARADAS.map(m=>[m,v(p.paradas[m]?.n),v(p.paradas[m]?.e)]),foot:[["Total",fmt(T.pn),fmt(T.pe)]],footStyles:{fillColor:[245,246,245],textColor:[20,20,20],fontStyle:"bold"}});
+  const mk=MANT.map(m=>(p.mant[m]?"[X] ":"[  ] ")+m).join("     ");
+  d.autoTable({...base,startY:sec("MANTENIMIENTO MAQUINARIA"),body:[[mk]]});
+  if(p.filtros.length)d.autoTable({...base,startY:d.lastAutoTable.finalY+1,head:[["Descripción filtro / repuesto","Uds","Referencia","Marca"]],body:p.filtros.map(f=>[v(f.desc),v(f.uds),v(f.ref),v(f.marca)])});
+  d.autoTable({...base,startY:sec("REPARACIÓN AVERÍA"),body:[[(p.repInt?"[X]":"[  ]")+" Reparación interna      "+(p.repExt?"[X]":"[  ]")+" Reparación externa","Proveedor: "+v(p.proveedor)]]});
+  d.autoTable({...base,startY:sec("OBSERVACIONES"),body:[[v(p.obs)||" "]],styles:{...base.styles,minCellHeight:18}});
+  let y=d.lastAutoTable.finalY+8;if(y>255){d.addPage();y=20}
+  d.setFont("helvetica","bold");d.setFontSize(9);d.text("FIRMA DEL OPERARIO",M,y);
+  d.setDrawColor(180,186,184);d.rect(M,y+2,80,28);
+  if(p.firma)try{d.addImage(p.firma,"PNG",M+1,y+3,78,26)}catch(e){}
+  d.setFont("helvetica","normal");d.setFontSize(8);d.text(v(p.operario),M,y+35);
+  if(p.cerrado){d.text("Cerrado: "+new Date(p.cerrado).toLocaleString("es-ES"),W-M,y+35,{align:"right"})}
+  const n=d.getNumberOfPages();for(let i=1;i<=n;i++){d.setPage(i);d.setFontSize(7);d.setTextColor(120);d.text(`Parte ${numParte(p)} · pág. ${i}/${n}`,W/2,290,{align:"center"})}
+  return d;
+}
+function b64(str){return btoa(unescape(encodeURIComponent(str)))}
+function payload(p,withSig){const q=JSON.parse(JSON.stringify(p));q.firmado=!!p.firma;if(!withSig)delete q.firma;delete q.hIniAuto;
+  return{tipo:"dfg-parte-maquinaria",version:APP_VER,dispositivo:DEV,exportado:new Date().toISOString(),parte:q}}
+function saveFile(blob,name){blob=new Blob([blob],{type:"application/octet-stream"});const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),6e4)}
+function waNum(){let n=(cfg.wa||"").replace(/\D/g,"");if(n.length===9)n="34"+n;return n}
+/* Código de texto del parte: viaja dentro del mensaje, no necesita archivos */
+function compact(o){if(Array.isArray(o)){const a=o.map(compact).filter(x=>x!==undefined);return a.length?a:undefined}
+  if(o&&typeof o==="object"){const r={};for(const[k,v]of Object.entries(o)){const c=compact(v);if(c!==undefined)r[k]=c}return Object.keys(r).length?r:undefined}
+  return(o===""||o===false||o==null)?undefined:o}
+function codigo(p){const q=JSON.parse(JSON.stringify(p));q.firmado=!!p.firma;delete q.firma;delete q.hIniAuto;q.dispositivo=DEV;return "DFG1:"+b64(JSON.stringify(compact(q)))+":FIN"}
+function mensaje(p){const t=(()=>{const o=P;P=p;const r=totals();P=o;return r})(),f=p.fecha.split("-").reverse().join("/");
+  const L=[`PARTE MAQUINARIA DFG`,`${p.maquina} · ${f} · ${p.operario}`,`Horómetro ${p.hIni} → ${p.hFin} (${fmt(t.hor)} h)`,
+    `Trabajo ${fmt(t.tn)} h N + ${fmt(t.te)} h E · Parada ${fmt(t.par)} h`];
+  if(p.gasA||p.gasB)L.push(`Gasóleo${p.gasA?" A "+p.gasA+" L":""}${p.gasB?" B "+p.gasB+" L":""}`);
+  (p.aceites||[]).filter(a=>num(a.litros)>0).forEach(a=>L.push(`Aceite ${a.desc}: ${a.op||"Relleno"} ${a.litros} L${a.marca?" ("+a.marca+")":""}`));
+  if(p.obs)L.push("Obs: "+p.obs);L.push("—— no borrar ——",codigo(p));return L.join("\n")}
+function copiar(txt){const ta=document.createElement("textarea");ta.value=txt;ta.setAttribute("readonly","");ta.style.cssText="position:fixed;top:0;left:0;opacity:0";
+  document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,txt.length);let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();
+  if(!ok&&navigator.clipboard)navigator.clipboard.writeText(txt).then(()=>toast("Mensaje copiado"),()=>{});return ok}
+function enviar(p){
+  const msg=mensaje(p),fch=p.fecha.split("-").reverse().join("/");
+  const asunto=`Parte maquinaria ${p.maquina} ${fch} - ${p.operario}`;
+  const wa=`https://wa.me/${waNum()}?text=${encodeURIComponent(msg)}`;
+  const ml=`mailto:${cfg.mail||""}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(msg)}`;
+  const base=`Parte_${numParte(p)}`;let pdf=null,bk=null;
+  const files=()=>{if(!pdf){pdf=new File([buildPDF(p).output("blob")],base+".pdf",{type:"application/pdf"});
+    bk=new File([JSON.stringify(payload(p,true),null,1)],base+".dfgparte.txt",{type:"text/plain"})}};
+  let canShare=false;try{files();canShare=!!(window.isSecureContext&&navigator.canShare&&navigator.canShare({files:[pdf]}))}catch(e){}
+  const linkBtn="display:block;text-align:center;text-decoration:none";
+  modal("Enviar parte "+numParte(p),`<div style="display:grid;gap:10px">
+    <a class="btn" href="${wa}" target="_blank" rel="noopener" style="${linkBtn};background:#1f8f4e;border-color:#1f8f4e;color:#fff">Enviar por WhatsApp</a>
+    <a class="btn" href="${ml}" style="${linkBtn}">Enviar por correo</a>
+    <button class="btn" id="sCopy">Copiar mensaje (para pegarlo donde quieras)</button>
+    <div class="note">El mensaje lleva un código con todos los datos del parte. La oficina lo pega en su app y genera el PDF. No hay que adjuntar nada.</div>
+    <details style="border-top:1px solid var(--line);padding-top:8px"${canShare||location.protocol==="file:"?"":" hidden"}><summary class="note" style="cursor:pointer">Enviar también los archivos (PDF y copia)</summary>
+      <div style="display:grid;gap:8px;margin-top:8px">
+      ${canShare?`<button class="btn pri" id="sShare">Compartir PDF y copia</button>`:`<div class="note">Abierta desde un archivo, el móvil no deja guardar ni compartir archivos. Funciona cuando la app se abre desde su enlace web.</div>`}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn small" id="sPdf">Guardar PDF</button><button class="btn small" id="sBk">Guardar copia</button></div></div></details>
+    <div class="note" id="sOk"></div></div>`,[{t:"Hecho",cls:"dark"}]);
+  const ok=t=>{$("#sOk").textContent=t};
+  $("#sCopy").onclick=()=>ok(copiar(msg)?"Mensaje copiado. Pégalo en WhatsApp o en el correo.":"No se pudo copiar automáticamente en este visor.");
+  const _sp=$("#sPdf");if(canShare)$("#sShare").onclick=async()=>{for(const fl of [[pdf,bk],[pdf]]){try{if(navigator.canShare({files:fl})){await navigator.share({files:fl,title:asunto,text:asunto});
+      ok(fl.length>1?"Enviado: PDF y copia de seguridad.":"Enviado solo el PDF.");return}}catch(e){if(e&&e.name==="AbortError"){ok("Envío cancelado.");return}}}ok("No se pudo compartir.")};
+  $("#sPdf").onclick=()=>{files();saveFile(pdf,pdf.name);ok("Si el PDF no aparece en Descargas, usa Enviar por WhatsApp.")};
+  $("#sBk").onclick=()=>{files();saveFile(bk,bk.name);ok("Si la copia no aparece en Descargas, usa Enviar por WhatsApp.")};
+}
+/* ---------- cerrar parte ---------- */
+$("#bCerrar").onclick=()=>{
+  const {e,w}=checks(true);
+  if(e.length){$("#msgs").innerHTML=e.map(x=>`<div class="msg bad">${esc(x)}</div>`).join("")+w.map(x=>`<div class="msg warn">${esc(x)}</div>`).join("");
+    modal("Faltan datos","Corrige lo indicado al final del parte:<br>• "+e.map(esc).join("<br>• "),[{t:"Revisar",cls:"pri",f:()=>$("#msgs").scrollIntoView({behavior:"smooth"})}]);return}
+  $("#msgs").innerHTML=w.map(x=>`<div class="msg warn">${esc(x)}</div>`).join("");
+  modal("¿Cerrar el parte "+numParte(P)+"?",(w.length?"Avisos:<br>• "+w.map(esc).join("<br>• ")+"<br><br>":"")+"Se guarda en el historial y se envían el PDF y su copia de seguridad. Después empieza un parte nuevo de la misma máquina.",
+    [{t:"Seguir editando"},{t:"Cerrar y enviar",cls:"pri",f:async()=>{
+      const p=JSON.parse(JSON.stringify(P));p.cerrado=Date.now();
+      const h=store.get(K.hist,[]).filter(x=>(x.id||numParte(x))!==(p.id||numParte(p)));h.unshift(p);store.set(K.hist,h.slice(0,60));regAdd(p);
+      const L=store.get(K.last,{}),cur=L[p.maquina];if(!cur||cur.fecha<=p.fecha){L[p.maquina]={h:num(p.hFin),fecha:p.fecha};store.set(K.last,L)}
+      const op=P.operario,mq=P.maquina;P=blank(mq);P.operario=op;$("#msgs").innerHTML="";renderAll();
+      enviar(p)}}]);
+};
+$("#bNuevo").onclick=()=>modal("¿Empezar un parte nuevo?","Se borrarán los datos del parte en curso que no se haya cerrado.",
+  [{t:"Cancelar"},{t:"Borrar y empezar",cls:"danger",f:()=>{const op=P.operario,mq=P.maquina;P=blank(mq);P.operario=op;$("#msgs").innerHTML="";renderAll();toast("Parte nuevo")}}]);
+
+/* ---------- historial ---------- */
+function renderHist(){const h=store.get(K.hist,[]);
+  $("#hist").innerHTML=h.length?h.map((p,i)=>{const T=(()=>{const o=P;P=p;const t=totals();P=o;return t})();
+    return`<div class="hrow"><div class="t"><b>${esc(numParte(p))}</b><div>${esc(p.operario)} · ${fmt(T.hor)} h horómetro · ${fmt(T.trab)} h trabajo</div></div>
+    <div class="a"><button class="btn small" data-pdf="${i}">Enviar</button><button class="btn small" data-edit="${i}">Reabrir</button></div></div>`}).join("")
+   :`<p class="note">Aún no hay partes cerrados. Rellena el parte y pulsa “Cerrar parte y generar PDF”.</p>`}
+$("#hist").addEventListener("click",ev=>{const h=store.get(K.hist,[]);
+  if(ev.target.dataset.pdf!=null)enviar(h[+ev.target.dataset.pdf]);
+  if(ev.target.dataset.edit!=null){const p=h[+ev.target.dataset.edit];modal("¿Reabrir "+numParte(p)+"?","Se sustituirá el parte en curso. Al volver a cerrarlo, reemplaza al del historial.",
+    [{t:"Cancelar"},{t:"Reabrir",cls:"pri",f:()=>{P=JSON.parse(JSON.stringify(p));delete P.cerrado;tab("parte");renderAll()}}])}});
+
+$("#bkAll").onclick=async()=>{const h=store.get(K.hist,[]);if(!h.length){toast("No hay partes que copiar");return}
+  const f=new File([JSON.stringify({tipo:"dfg-partes-lote",version:APP_VER,dispositivo:DEV,exportado:new Date().toISOString(),partes:h},null,1)],`Copia_partes_${DEV}_${today()}.dfgparte.txt`,{type:"text/plain"});
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:f.name});return}}catch(e){if(e&&e.name==="AbortError")return}
+  saveFile(f,f.name);toast("Copia descargada")};
+$("#bkIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());const list=j.partes||(j.parte?[j.parte]:null);if(!list)throw 0;
+    const h=store.get(K.hist,[]),ids=new Set(h.map(x=>x.id||numParte(x)));let n=0;
+    list.forEach(p=>{if(!ids.has(p.id||numParte(p))){h.push(p);n++}});h.sort((a,b)=>(b.cerrado||0)-(a.cerrado||0));store.set(K.hist,h.slice(0,60));renderHist();toast(`${n} partes restaurados`)}
+  catch(e){toast("El archivo no es una copia de partes válida")}};
+
+/* ---------- ajustes ---------- */
+function renderCfg(){$("#cfgMaq").value=cfg.maquinas.join("\n");$("#cfgCant").value=cfg.canteras.join("\n");$("#cfgMail").value=cfg.mail||"";$("#cfgWa").value=cfg.wa||"";$("#cfgOp").value=cfg.operario}
+$("#cfgSave").onclick=()=>{const L=s=>s.split("\n").map(x=>x.trim()).filter(Boolean);
+  cfg={maquinas:cfg.maquinas,cfgFile:cfg.cfgFile,canteras:L($("#cfgCant").value),mail:$("#cfgMail").value.trim(),wa:$("#cfgWa").value.trim(),operario:$("#cfgOp").value.trim()};
+  toast(store.set(K.cfg,cfg)?"Ajustes guardados":"No se pudieron guardar los ajustes en este navegador");
+  if(!P.operario)P.operario=cfg.operario;renderAll()};
+
+$("#cfgIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;
+  try{const j=JSON.parse(await f.text());if(j.tipo!=="dfg-config-maquinistas"||!Array.isArray(j.maquinas))throw 0;
+    cfg.maquinas=j.maquinas;cfg.cfgFile=true;if(Array.isArray(j.canteras)&&j.canteras.length)cfg.canteras=j.canteras;if(j.mail)cfg.mail=j.mail;if(j.wa)cfg.wa=j.wa;
+    store.set(K.cfg,cfg);renderCfg();renderAll();toast(`Configuración cargada: ${cfg.maquinas.length} máquinas`)}
+  catch(e){toast("El archivo no es una configuración válida")}};
+$("#nojs").style.display="none";
+renderAll();
+if(!cfg.maquinas.length)setTimeout(()=>modal("Configura las máquinas","Antes del primer parte, añade los códigos de máquina en Ajustes o carga el archivo de configuración de la oficina.",[{t:"Ir a Ajustes",cls:"pri",f:()=>tab("ajustes")}]),300);
+if(!window.jspdf)modal("Falta el generador de PDF","Este archivo está incompleto. Vuelve a descargarlo.",[{t:"Aceptar"}]);
+</script>
+</body>
+</html>
