@@ -88,7 +88,7 @@ table.par input{padding:7px 8px}
 .msg.warn{border-color:var(--warn);background:var(--bg)}
 .hist{display:grid;gap:8px}
 .hrow{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--paper)}
-.hrow .t{min-width:0} .hrow .t b{font-family:var(--f-num)} .hrow .t div{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hrow{flex-wrap:wrap}.hrow .t{min-width:0;flex:1 1 200px} .hrow .t b{font-family:var(--f-num)} .hrow .t div{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hrow .a{display:flex;gap:6px;flex-shrink:0}
 .modal{position:fixed;inset:0;z-index:10;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px}
 .modal .box{background:var(--paper);color:var(--ink);border-radius:10px;padding:18px;max-width:420px;width:100%;display:grid;gap:12px}
@@ -226,6 +226,9 @@ table.par input{padding:7px 8px}
     <p class="note">Al cerrar el parte se abre el panel de envío. Con este número, WhatsApp abre directamente el chat de la oficina; sin él, deja elegir el contacto.</p>
   </div></section>
   <button class="btn dark" id="cfgSave">Guardar ajustes</button>
+  <section class="sheet"><h2>Borrar partes</h2><div class="body">
+    <p class="note" style="margin:0">Borra de este teléfono todos los partes cerrados, los registros y las horas guardadas de cada máquina. No toca estos ajustes. Los partes ya enviados siguen en la oficina.</p>
+    <button class="btn danger" id="wipeAll" style="justify-self:start">Borrar todos los partes de este teléfono</button></div></section>
 </main>
 
 <div class="bar" id="bar">
@@ -653,13 +656,23 @@ $("#bNuevo").onclick=()=>modal("¿Empezar un parte nuevo?","Se borrarán los dat
 function renderHist(){const h=store.get(K.hist,[]);
   $("#hist").innerHTML=h.length?h.map((p,i)=>{const T=(()=>{const o=P;P=p;const t=totals();P=o;return t})();
     return`<div class="hrow"><div class="t"><b>${esc(numParte(p))}</b><div>${esc(p.operario)} · ${fmt(T.hor)} h horómetro · ${fmt(T.trab)} h trabajo</div></div>
-    <div class="a"><button class="btn small" data-pdf="${i}">Enviar</button><button class="btn small" data-edit="${i}">Reabrir</button></div></div>`}).join("")
+    <div class="a"><button class="btn small" data-pdf="${i}">Enviar</button><button class="btn small" data-edit="${i}">Reabrir</button><button class="btn small danger" data-del="${i}" aria-label="Borrar parte">Borrar</button></div></div>`}).join("")
    :`<p class="note">Aún no hay partes cerrados. Rellena el parte y pulsa “Cerrar parte y generar PDF”.</p>`}
 $("#hist").addEventListener("click",ev=>{const h=store.get(K.hist,[]);
   if(ev.target.dataset.pdf!=null)enviar(h[+ev.target.dataset.pdf]);
+  if(ev.target.dataset.del!=null){const p=h[+ev.target.dataset.del];
+    modal("¿Borrar el parte "+numParte(p)+"?",`Se borra de este teléfono: historial, registros de gasóleo y aceites y horas de horómetro.<br><br><b>Si ya lo enviaste a la oficina, allí sigue estando.</b> Avisa a la oficina si era un parte equivocado.`,
+      [{t:"Cancelar"},{t:"Borrar parte",cls:"danger",f:()=>{borrarPartes([p.id||numParte(p)]);renderHist();toast("Parte "+numParte(p)+" borrado")}}])}
   if(ev.target.dataset.edit!=null){const p=h[+ev.target.dataset.edit];modal("¿Reabrir "+numParte(p)+"?","Se sustituirá el parte en curso. Al volver a cerrarlo, reemplaza al del historial.",
     [{t:"Cancelar"},{t:"Reabrir",cls:"pri",f:()=>{P=JSON.parse(JSON.stringify(p));delete P.cerrado;tab("parte");renderAll()}}])}});
 
+/* Borra partes del teléfono y recalcula las últimas horas de horómetro de cada máquina afectada */
+function borrarPartes(ids){const key=x=>x.id||numParte(x),set=new Set(ids),maqs=new Set();
+  const h=store.get(K.hist,[]);h.filter(x=>set.has(key(x))).forEach(x=>maqs.add(x.maquina));store.set(K.hist,h.filter(x=>!set.has(key(x))));
+  const r=store.get(K.reg,[]);r.filter(x=>set.has(key(x))).forEach(x=>maqs.add(x.maquina));const rest=r.filter(x=>!set.has(key(x)));store.set(K.reg,rest);
+  const L=store.get(K.last,{});maqs.forEach(m=>{const ps=rest.filter(x=>x.maquina===m).sort((a,b)=>a.fecha<b.fecha?-1:a.fecha>b.fecha?1:num(a.hFin)-num(b.hFin));
+    if(ps.length){const q=ps[ps.length-1];L[m]={h:num(q.hFin),fecha:q.fecha}}else delete L[m]});store.set(K.last,L);
+  if(P.hIniAuto&&maqs.has(P.maquina)){const l=lastH(P.maquina);P.hIni=l?String(l.h):"";P.hIniAuto=!!l;renderAll()}}
 $("#bkAll").onclick=async()=>{const h=store.get(K.hist,[]);if(!h.length){toast("No hay partes que copiar");return}
   const f=new File([JSON.stringify({tipo:"dfg-partes-lote",version:APP_VER,dispositivo:DEV,exportado:new Date().toISOString(),partes:h},null,1)],`Copia_partes_${DEV}_${today()}.dfgparte.txt`,{type:"text/plain"});
   try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:f.name});return}}catch(e){if(e&&e.name==="AbortError")return}
@@ -672,6 +685,10 @@ $("#bkIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(
 
 /* ---------- ajustes ---------- */
 function renderCfg(){$("#cfgMaq").value=cfg.maquinas.join("\n");$("#cfgCant").value=cfg.canteras.join("\n");$("#cfgMail").value=cfg.mail||"";$("#cfgWa").value=cfg.wa||"";$("#cfgOp").value=cfg.operario}
+$("#wipeAll").onclick=()=>{const n=store.get(K.reg,[]).length||store.get(K.hist,[]).length;
+  modal("¿Borrar todos los partes?",`Se borrarán ${n} partes de este teléfono, con sus registros y horas guardadas. No se puede deshacer.`,
+    [{t:"Cancelar"},{t:"Borrar todo",cls:"danger",f:()=>{store.set(K.hist,[]);store.set(K.reg,[]);store.set(K.last,{});
+      const op=P.operario;P=blank(P.maquina);P.operario=op;renderAll();toast("Partes borrados")}}])};
 $("#cfgSave").onclick=()=>{const L=s=>s.split("\n").map(x=>x.trim()).filter(Boolean);
   cfg={maquinas:cfg.maquinas,cfgFile:cfg.cfgFile,canteras:L($("#cfgCant").value),mail:$("#cfgMail").value.trim(),wa:$("#cfgWa").value.trim(),operario:$("#cfgOp").value.trim()};
   toast(store.set(K.cfg,cfg)?"Ajustes guardados":"No se pudieron guardar los ajustes en este navegador");
