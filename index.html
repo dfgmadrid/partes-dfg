@@ -611,8 +611,9 @@ function enviar(p){
     <button class="btn" id="sCopy">Copiar mensaje (para pegarlo donde quieras)</button>`;
   const saveBtns=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn small" id="sPdf">Guardar PDF</button><button class="btn small" id="sBk">Guardar copia</button></div>`;
   modal("Enviar parte "+numParte(p),`<div style="display:grid;gap:10px">
-    ${canShare?`<button class="btn pri" id="sShare" style="padding:14px">Compartir PDF y copia</button>
-    <div class="note">Se abre la lista de apps del teléfono: elige WhatsApp o el correo y van adjuntos el PDF (con la firma) y la copia de seguridad.</div>
+    ${canShare?`<button class="btn pri" id="sShare" style="padding:14px">Compartir PDF del parte</button>
+    <div class="note">Se abre la lista de apps del teléfono: elige WhatsApp o el correo. El PDF lleva la firma y, dentro, los datos para la app de la oficina.</div>
+    <button class="btn small" id="sShareBk">Compartir también la copia de seguridad</button>
     <details style="border-top:1px solid var(--line);padding-top:8px"><summary class="note" style="cursor:pointer">Otras formas de enviar</summary>
       <div style="display:grid;gap:8px;margin-top:8px">${msgBtns}
       <div class="note">El mensaje lleva un código con los datos del parte; la oficina lo pega en su app.</div>${saveBtns}</div></details>`
@@ -623,8 +624,11 @@ function enviar(p){
     <div class="note" id="sOk"></div></div>`,[{t:"Hecho",cls:"dark"}]);
   const ok=t=>{$("#sOk").textContent=t};
   $("#sCopy").onclick=()=>ok(copiar(msg)?"Mensaje copiado. Pégalo en WhatsApp o en el correo.":"No se pudo copiar automáticamente en este visor.");
-  const _sp=$("#sPdf");if(canShare)$("#sShare").onclick=async()=>{for(const fl of [[pdf,bk],[pdf]]){try{if(navigator.canShare({files:fl})){await navigator.share({files:fl,title:asunto,text:asunto});
-      ok(fl.length>1?"Enviado: PDF y copia de seguridad.":"Enviado solo el PDF.");return}}catch(e){if(e&&e.name==="AbortError"){ok("Envío cancelado.");return}}}ok("No se pudo compartir.")};
+  /* Solo archivos, sin texto: WhatsApp en Android descarta los archivos si el envío lleva texto */
+  const shareOne=async(f,label)=>{try{if(!navigator.canShare({files:[f]})){ok("Este móvil no deja compartir "+label+".");return}
+      await navigator.share({files:[f]});ok(label[0].toUpperCase()+label.slice(1)+" compartido.")}
+    catch(e){ok(e&&e.name==="AbortError"?"Envío cancelado.":"No se pudo compartir "+label+".")}};
+  if(canShare){$("#sShare").onclick=()=>shareOne(pdf,"el PDF");$("#sShareBk").onclick=()=>shareOne(bk,"la copia de seguridad")}
   $("#sPdf").onclick=()=>{files();saveFile(pdf,pdf.name);ok("Si el PDF no aparece en Descargas, usa Enviar por WhatsApp.")};
   $("#sBk").onclick=()=>{files();saveFile(bk,bk.name);ok("Si la copia no aparece en Descargas, usa Enviar por WhatsApp.")};
 }
