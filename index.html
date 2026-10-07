@@ -599,15 +599,20 @@ function enviar(p){
     bk=new File([JSON.stringify(payload(p,true),null,1)],base+".dfgparte.txt",{type:"text/plain"})}};
   let canShare=false;try{files();canShare=!!(window.isSecureContext&&navigator.canShare&&navigator.canShare({files:[pdf]}))}catch(e){}
   const linkBtn="display:block;text-align:center;text-decoration:none";
+  const msgBtns=`<a class="btn" href="${wa}" target="_blank" rel="noopener" style="${linkBtn};background:#1f8f4e;border-color:#1f8f4e;color:#fff">${canShare?"WhatsApp (solo mensaje)":"Enviar por WhatsApp"}</a>
+    <a class="btn" href="${ml}" style="${linkBtn}">${canShare?"Correo (solo mensaje)":"Enviar por correo"}</a>
+    <button class="btn" id="sCopy">Copiar mensaje (para pegarlo donde quieras)</button>`;
+  const saveBtns=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn small" id="sPdf">Guardar PDF</button><button class="btn small" id="sBk">Guardar copia</button></div>`;
   modal("Enviar parte "+numParte(p),`<div style="display:grid;gap:10px">
-    <a class="btn" href="${wa}" target="_blank" rel="noopener" style="${linkBtn};background:#1f8f4e;border-color:#1f8f4e;color:#fff">Enviar por WhatsApp</a>
-    <a class="btn" href="${ml}" style="${linkBtn}">Enviar por correo</a>
-    <button class="btn" id="sCopy">Copiar mensaje (para pegarlo donde quieras)</button>
+    ${canShare?`<button class="btn pri" id="sShare" style="padding:14px">Compartir PDF y copia</button>
+    <div class="note">Se abre la lista de apps del teléfono: elige WhatsApp o el correo y van adjuntos el PDF (con la firma) y la copia de seguridad.</div>
+    <details style="border-top:1px solid var(--line);padding-top:8px"><summary class="note" style="cursor:pointer">Otras formas de enviar</summary>
+      <div style="display:grid;gap:8px;margin-top:8px">${msgBtns}
+      <div class="note">El mensaje lleva un código con los datos del parte; la oficina lo pega en su app.</div>${saveBtns}</div></details>`
+    :`${msgBtns}
     <div class="note">El mensaje lleva un código con todos los datos del parte. La oficina lo pega en su app y genera el PDF. No hay que adjuntar nada.</div>
-    <details style="border-top:1px solid var(--line);padding-top:8px"${canShare||location.protocol==="file:"?"":" hidden"}><summary class="note" style="cursor:pointer">Enviar también los archivos (PDF y copia)</summary>
-      <div style="display:grid;gap:8px;margin-top:8px">
-      ${canShare?`<button class="btn pri" id="sShare">Compartir PDF y copia</button>`:`<div class="note">Abierta desde un archivo, el móvil no deja guardar ni compartir archivos. Funciona cuando la app se abre desde su enlace web.</div>`}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn small" id="sPdf">Guardar PDF</button><button class="btn small" id="sBk">Guardar copia</button></div></div></details>
+    <details style="border-top:1px solid var(--line);padding-top:8px"${location.protocol==="file:"?"":" hidden"}><summary class="note" style="cursor:pointer">Enviar también los archivos (PDF y copia)</summary>
+      <div style="display:grid;gap:8px;margin-top:8px"><div class="note">Abierta desde un archivo, el móvil no deja guardar ni compartir archivos. Funciona cuando la app se abre desde su enlace web.</div>${saveBtns}</div></details>`}
     <div class="note" id="sOk"></div></div>`,[{t:"Hecho",cls:"dark"}]);
   const ok=t=>{$("#sOk").textContent=t};
   $("#sCopy").onclick=()=>ok(copiar(msg)?"Mensaje copiado. Pégalo en WhatsApp o en el correo.":"No se pudo copiar automáticamente en este visor.");
