@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1f2a2e">
 <title>Parte Maquinaria DFG</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Parte DFG">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
 /* Layout: una columna móvil, secciones como hojas del talonario, barra de acción fija abajo */
 :root{
@@ -231,8 +238,8 @@ table.par input{padding:7px 8px}
 </div></div>
 <div class="toast" id="toast" hidden></div>
 
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="jspdf.min.js"></script>
+<script src="jspdf.autotable.min.js"></script>
 <script>/* ===== Módulo de análisis de consumos y mantenimiento (compartido por las dos apps) ===== */
 var ANA=(function(){
   var css='.ana{display:grid;gap:14px;min-width:0}.ana .sec{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden;min-width:0}'+
@@ -672,6 +679,7 @@ $("#cfgIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if
     store.set(K.cfg,cfg);renderCfg();renderAll();toast(`Configuración cargada: ${cfg.maquinas.length} máquinas`)}
   catch(e){toast("El archivo no es una configuración válida")}};
 $("#nojs").style.display="none";
+if("serviceWorker" in navigator&&location.protocol==="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 renderAll();
 if(!cfg.maquinas.length)setTimeout(()=>modal("Configura las máquinas","Antes del primer parte, añade los códigos de máquina en Ajustes o carga el archivo de configuración de la oficina.",[{t:"Ir a Ajustes",cls:"pri",f:()=>tab("ajustes")}]),300);
 if(!window.jspdf)modal("Falta el generador de PDF","Este archivo está incompleto. Vuelve a descargarlo.",[{t:"Aceptar"}]);
