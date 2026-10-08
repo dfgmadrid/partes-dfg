@@ -226,9 +226,13 @@ table.par input{padding:7px 8px}
     <p class="note">Al cerrar el parte se abre el panel de envío. Con este número, WhatsApp abre directamente el chat de la oficina; sin él, deja elegir el contacto.</p>
   </div></section>
   <button class="btn dark" id="cfgSave">Guardar ajustes</button>
+  <section class="sheet"><h2>Horas guardadas por máquina</h2><div class="body">
+    <p class="note" style="margin:0">Horas finales del último parte cerrado de cada máquina en este teléfono. Se usan como horas iniciales del siguiente parte. Si alguna no es correcta (por ejemplo, de un parte de prueba), olvídala.</p>
+    <div id="lastList" style="display:grid;gap:6px"></div></div></section>
   <section class="sheet"><h2>Borrar partes</h2><div class="body">
     <p class="note" style="margin:0">Borra de este teléfono todos los partes cerrados, los registros y las horas guardadas de cada máquina. No toca estos ajustes. Los partes ya enviados siguen en la oficina.</p>
     <button class="btn danger" id="wipeAll" style="justify-self:start">Borrar todos los partes de este teléfono</button></div></section>
+  <p class="note" id="appVer" style="text-align:center"></p>
 </main>
 
 <div class="bar" id="bar">
@@ -372,7 +376,7 @@ const TIPOS=["Servicio cantera","Desescombro","Acopios","Escombrera","Restauraci
 const PARADAS=["Mantenimiento","Ruedas","Avería","Falta operario","Sin trabajo"];
 const ACEITES_FIJOS=["Motor 14W40","Hidráulico 10W20","Perforación"];
 const MANT=["Lavar","Engrasar","Cambio filtros","Cambio aceites"];
-const APP_VER="2.0";
+const APP_VER="2.1 (08/10/2026)";
 /* Lista de máquinas de la empresa. Se usa si el teléfono no tiene otra configurada. */
 const MAQUINAS_EMPRESA=["EX-13","EX-05","DU-02","DU-03","DU-18","DU-13","CA-13","CA-16","CA-17","CA-45","CA-50","AX-02","PE-12","PE-18","PE-21","PE-28","PV-14","CT-08","CA-06"];
 const K={draft:"dfgpm_draft",cfg:"dfgpm_cfg",hist:"dfgpm_hist",last:"dfgpm_last",dev:"dfgpm_dev",reg:"dfgpm_reg"};
@@ -450,7 +454,7 @@ function checks(strict){
   if(!P.fecha)e.push("Falta la fecha.");
   if(!P.maquina)e.push(cfg.maquinas.length?"Falta el código de máquina.":"No hay máquinas configuradas. Añádelas en Ajustes.");
   else{const l=lastH(P.maquina);if(l&&P.hIni!==""&&!isNaN(num(P.hIni))&&l.fecha<=P.fecha){const d=num(P.hIni)-l.h;
-    if(d<0)w.push(`Horas iniciales (${P.hIni}) menores que las finales del último parte de ${P.maquina} (${l.h}).`);
+    if(d<0)w.push(`Horas iniciales (${P.hIni}) menores que las finales del último parte de ${P.maquina} guardado en este teléfono (${l.h}, del ${l.fecha.split("-").reverse().join("/")}). Si ese dato no es correcto, bórralo en Ajustes → Horas guardadas por máquina.`);
     else if(d>0.5)w.push(`Hay ${fmt(d)} h de horómetro sin parte desde el último cierre de ${P.maquina} (${l.h}).`)}}
   if(!P.operario.trim())e.push("Falta el nombre del operario.");
   P.trabajos.forEach((t,i)=>{const used=["hn","he","viajes","rCarga","rPica","mPerf","nivel"].some(k=>t[k]!==""&&t[k]!=null);
@@ -605,9 +609,14 @@ function enviar(p){
   const wa=`https://wa.me/${waNum()}?text=${encodeURIComponent(msg)}`;
   const ml=`mailto:${cfg.mail||""}?subject=${encodeURIComponent(asunto)}&body=${encodeURIComponent(msg)}`;
   const base=`Parte_${numParte(p)}`;let pdf=null,bk=null;
-  const files=()=>{if(!pdf){pdf=new File([buildPDF(p).output("blob")],base+".pdf",{type:"application/pdf"});
-    bk=new File([JSON.stringify(payload(p,true),null,1)],base+".dfgparte.txt",{type:"text/plain"})}};
-  let canShare=false;try{files();canShare=!!(window.isSecureContext&&navigator.canShare&&navigator.canShare({files:[pdf]}))}catch(e){}
+  let pdfErr="";
+  const files=()=>{if(!bk)bk=new File([JSON.stringify(payload(p,true),null,1)],base+".dfgparte.txt",{type:"text/plain"});
+    if(!pdf){try{pdf=new File([buildPDF(p).output("blob")],base+".pdf",{type:"application/pdf"})}catch(e){pdfErr=(e&&(e.message||e.name))||String(e);console.error(e)}}};
+  files();
+  let canShare=false;try{canShare=!!(pdf&&window.isSecureContext&&navigator.canShare&&navigator.canShare({files:[pdf]}))}catch(e){}
+  const motivo=pdfErr?`No se pudo generar el PDF de este parte (${esc(pdfErr)}). Envía el parte por WhatsApp como mensaje y avisa a la oficina.`
+    :!window.isSecureContext?"Abierta desde un archivo, el móvil no deja guardar ni compartir archivos. Funciona cuando la app se abre desde su enlace web."
+    :"Este navegador no permite compartir archivos desde la app. Ábrela en Chrome (Android) o Safari (iPhone) desde su enlace, o usa Guardar PDF y adjúntalo a mano.";
   const linkBtn="display:block;text-align:center;text-decoration:none";
   const msgBtns=`<a class="btn" href="${wa}" target="_blank" rel="noopener" style="${linkBtn};background:#1f8f4e;border-color:#1f8f4e;color:#fff">${canShare?"WhatsApp (solo mensaje)":"Enviar por WhatsApp"}</a>
     <a class="btn" href="${ml}" style="${linkBtn}">${canShare?"Correo (solo mensaje)":"Enviar por correo"}</a>
@@ -622,8 +631,8 @@ function enviar(p){
       <div class="note">El mensaje lleva un código con los datos del parte; la oficina lo pega en su app.</div>${saveBtns}</div></details>`
     :`${msgBtns}
     <div class="note">El mensaje lleva un código con todos los datos del parte. La oficina lo pega en su app y genera el PDF. No hay que adjuntar nada.</div>
-    <details style="border-top:1px solid var(--line);padding-top:8px"${location.protocol==="file:"?"":" hidden"}><summary class="note" style="cursor:pointer">Enviar también los archivos (PDF y copia)</summary>
-      <div style="display:grid;gap:8px;margin-top:8px"><div class="note">Abierta desde un archivo, el móvil no deja guardar ni compartir archivos. Funciona cuando la app se abre desde su enlace web.</div>${saveBtns}</div></details>`}
+    <details style="border-top:1px solid var(--line);padding-top:8px"${pdfErr?" open":""}><summary class="note" style="cursor:pointer">Enviar también los archivos (PDF y copia)</summary>
+      <div style="display:grid;gap:8px;margin-top:8px"><div class="msg ${pdfErr?"bad":"warn"}">${motivo}</div>${pdfErr?"":saveBtns}</div></details>`}
     <div class="note" id="sOk"></div></div>`,[{t:"Hecho",cls:"dark"}]);
   const ok=t=>{$("#sOk").textContent=t};
   $("#sCopy").onclick=()=>ok(copiar(msg)?"Mensaje copiado. Pégalo en WhatsApp o en el correo.":"No se pudo copiar automáticamente en este visor.");
@@ -632,8 +641,8 @@ function enviar(p){
       await navigator.share({files:[f]});ok(label[0].toUpperCase()+label.slice(1)+" compartido.")}
     catch(e){ok(e&&e.name==="AbortError"?"Envío cancelado.":"No se pudo compartir "+label+".")}};
   if(canShare){$("#sShare").onclick=()=>shareOne(pdf,"el PDF");$("#sShareBk").onclick=()=>shareOne(bk,"la copia de seguridad")}
-  $("#sPdf").onclick=()=>{files();saveFile(pdf,pdf.name);ok("Si el PDF no aparece en Descargas, usa Enviar por WhatsApp.")};
-  $("#sBk").onclick=()=>{files();saveFile(bk,bk.name);ok("Si la copia no aparece en Descargas, usa Enviar por WhatsApp.")};
+  if($("#sPdf"))$("#sPdf").onclick=()=>{files();if(!pdf){ok("No se pudo generar el PDF: "+pdfErr);return}saveFile(pdf,pdf.name);ok("Si el PDF no aparece en Descargas, usa Enviar por WhatsApp.")};
+  if($("#sBk"))$("#sBk").onclick=()=>{files();saveFile(bk,bk.name);ok("Si la copia no aparece en Descargas, usa Enviar por WhatsApp.")};
 }
 /* ---------- cerrar parte ---------- */
 $("#bCerrar").onclick=()=>{
@@ -684,10 +693,16 @@ $("#bkIn").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(
   catch(e){toast("El archivo no es una copia de partes válida")}};
 
 /* ---------- ajustes ---------- */
-function renderCfg(){$("#cfgMaq").value=cfg.maquinas.join("\n");$("#cfgCant").value=cfg.canteras.join("\n");$("#cfgMail").value=cfg.mail||"";$("#cfgWa").value=cfg.wa||"";$("#cfgOp").value=cfg.operario}
+function renderLast(){const L=store.get(K.last,{}),ks=Object.keys(L).sort();
+  $("#lastList").innerHTML=ks.length?ks.map(m=>`<div class="hrow"><div class="t"><b>${esc(m)}</b><div>${esc(L[m].h)} h · parte del ${esc((L[m].fecha||"").split("-").reverse().join("/"))}</div></div><div class="a"><button class="btn small danger" data-forget="${esc(m)}">Olvidar</button></div></div>`).join("")
+    :`<p class="note" style="margin:0">No hay horas guardadas en este teléfono.</p>`}
+document.addEventListener("click",ev=>{const m=ev.target.dataset&&ev.target.dataset.forget;if(!m)return;
+  modal("¿Olvidar las horas de "+m+"?","El siguiente parte de esta máquina empezará sin horas iniciales y habrá que escribirlas.",[{t:"Cancelar"},{t:"Olvidar",cls:"danger",f:()=>{const L=store.get(K.last,{});delete L[m];store.set(K.last,L);
+    if(P.maquina===m&&P.hIniAuto){P.hIni="";P.hIniAuto=false;renderAll()}renderLast();update();toast("Horas de "+m+" olvidadas")}}])});
+function renderCfg(){renderLast();$("#appVer").textContent=`Versión ${APP_VER} · ${location.host||"archivo local"} · teléfono ${DEV}`;$("#cfgMaq").value=cfg.maquinas.join("\n");$("#cfgCant").value=cfg.canteras.join("\n");$("#cfgMail").value=cfg.mail||"";$("#cfgWa").value=cfg.wa||"";$("#cfgOp").value=cfg.operario}
 $("#wipeAll").onclick=()=>{const n=store.get(K.reg,[]).length||store.get(K.hist,[]).length;
   modal("¿Borrar todos los partes?",`Se borrarán ${n} partes de este teléfono, con sus registros y horas guardadas. No se puede deshacer.`,
-    [{t:"Cancelar"},{t:"Borrar todo",cls:"danger",f:()=>{store.set(K.hist,[]);store.set(K.reg,[]);store.set(K.last,{});
+    [{t:"Cancelar"},{t:"Borrar todo",cls:"danger",f:()=>{store.set(K.hist,[]);store.set(K.reg,[]);store.set(K.last,{});renderLast();
       const op=P.operario;P=blank(P.maquina);P.operario=op;renderAll();toast("Partes borrados")}}])};
 $("#cfgSave").onclick=()=>{const L=s=>s.split("\n").map(x=>x.trim()).filter(Boolean);
   cfg={maquinas:cfg.maquinas,cfgFile:cfg.cfgFile,canteras:L($("#cfgCant").value),mail:$("#cfgMail").value.trim(),wa:$("#cfgWa").value.trim(),operario:$("#cfgOp").value.trim()};
